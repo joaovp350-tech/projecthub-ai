@@ -4,9 +4,9 @@ export default function Sidebar() {
   const menu = [
     { label: "🏠 Dashboard", href: "/" },
     { label: "🏗 Obras", href: "/obras" },
-    { label: "👥 Clientes", href: "#" },
-    { label: "👷 Funcionários", href: "#" },
-    { label: "📦 Materiais", href: "#" },
+    { label: "👥 Clientes", href: "/clientes" },
+    { label: "👷 Funcionários", href: "/funcionarios" },
+    { label: "📦 Materiais", href: "/materiais" },
     { label: "💰 Financeiro", href: "#" },
     { label: "📄 Relatórios", href: "#" },
     { label: "⚙ Configurações", href: "#" },

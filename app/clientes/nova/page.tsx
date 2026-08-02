@@ -1,19 +1,19 @@
-import ObraForm from "@/components/forms/ObraForm";
+import ClienteForm from "@/components/forms/ClienteForm";
 
-export default function NovaObraPage() {
+export default function NovoClientePage() {
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-800">
-          Nova Obra
+          Novo Cliente
         </h1>
 
         <p className="mt-2 text-slate-500">
-          Cadastre uma nova obra no sistema.
+          Cadastre um novo cliente.
         </p>
       </div>
 
-      <ObraForm />
+      <ClienteForm />
     </div>
   );
 }

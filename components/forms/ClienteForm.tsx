@@ -9,40 +9,40 @@ import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
 
-type FormData = {
+type ClienteFormData = {
   nome: string;
-  cliente: string;
+  documento: string;
+  telefone: string;
+  email: string;
   endereco: string;
-  responsavel: string;
-  inicio: string;
-  previsao: string;
-  valor: string;
-  status: string;
+  cidade: string;
+  estado: string;
+  cep: string;
   observacoes: string;
 };
 
-const initialForm: FormData = {
+const initialForm: ClienteFormData = {
   nome: "",
-  cliente: "",
+  documento: "",
+  telefone: "",
+  email: "",
   endereco: "",
-  responsavel: "",
-  inicio: "",
-  previsao: "",
-  valor: "",
-  status: "Planejamento",
+  cidade: "",
+  estado: "",
+  cep: "",
   observacoes: "",
 };
 
-export default function ObraForm() {
+export default function ClienteForm() {
   const router = useRouter();
 
-  const [form, setForm] = useState<FormData>(initialForm);
+  const [form, setForm] = useState<ClienteFormData>(initialForm);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
   function handleChange(
     event: ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      HTMLInputElement | HTMLTextAreaElement
     >
   ) {
     const { name, value } = event.target;
@@ -53,49 +53,45 @@ export default function ObraForm() {
     }));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
     setErro("");
 
-    if (!form.nome.trim() || !form.cliente.trim()) {
-      setErro("Preencha o nome da obra e o cliente.");
+    if (!form.nome.trim()) {
+      setErro("Preencha o nome do cliente.");
       return;
     }
 
     setSalvando(true);
 
-    const valorNumerico = form.valor
-      ? Number(
-          form.valor
-            .replace(/\./g, "")
-            .replace(",", ".")
-            .replace(/[^\d.-]/g, "")
-        )
-      : null;
-
-    const { error } = await supabase.from("obras").insert({
-      nome: form.nome.trim(),
-      cliente: form.cliente.trim(),
-      endereco: form.endereco.trim() || null,
-      responsavel: form.responsavel.trim() || null,
-      data_inicio: form.inicio || null,
-      data_fim: form.previsao || null,
-      valor: valorNumerico,
-      status: form.status,
-      observacoes: form.observacoes.trim() || null,
-    });
+    const { error } = await supabase
+      .from("clientes")
+      .insert({
+        nome: form.nome.trim(),
+        documento: form.documento.trim() || null,
+        telefone: form.telefone.trim() || null,
+        email: form.email.trim() || null,
+        endereco: form.endereco.trim() || null,
+        cidade: form.cidade.trim() || null,
+        estado: form.estado.trim() || null,
+        cep: form.cep.trim() || null,
+        observacoes: form.observacoes.trim() || null,
+      });
 
     if (error) {
       console.error(error);
-      setErro(`Não foi possível salvar a obra: ${error.message}`);
+      setErro(
+        `Não foi possível cadastrar o cliente: ${error.message}`
+      );
       setSalvando(false);
       return;
     }
 
-    alert("Obra cadastrada com sucesso!");
-
+    alert("Cliente cadastrado com sucesso!");
     setForm(initialForm);
-    router.push("/obras");
+    router.push("/clientes");
     router.refresh();
   }
 
@@ -105,7 +101,7 @@ export default function ObraForm() {
       className="space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"
     >
       <h2 className="text-2xl font-bold text-slate-800">
-        Cadastro de Obra
+        Cadastro de Cliente
       </h2>
 
       {erro && (
@@ -123,7 +119,7 @@ export default function ObraForm() {
             htmlFor="nome"
             className="mb-2 block text-sm font-medium"
           >
-            Nome da Obra *
+            Nome *
           </label>
 
           <input
@@ -138,23 +134,57 @@ export default function ObraForm() {
 
         <div>
           <label
-            htmlFor="cliente"
+            htmlFor="documento"
             className="mb-2 block text-sm font-medium"
           >
-            Cliente *
+            CPF ou CNPJ
           </label>
 
           <input
-            id="cliente"
-            name="cliente"
-            value={form.cliente}
+            id="documento"
+            name="documento"
+            value={form.documento}
             onChange={handleChange}
-            required
             className="w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500"
           />
         </div>
 
         <div>
+          <label
+            htmlFor="telefone"
+            className="mb-2 block text-sm font-medium"
+          >
+            Telefone
+          </label>
+
+          <input
+            id="telefone"
+            name="telefone"
+            value={form.telefone}
+            onChange={handleChange}
+            className="w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="email"
+            className="mb-2 block text-sm font-medium"
+          >
+            E-mail
+          </label>
+
+          <input
+            id="email"
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            className="w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div className="md:col-span-2">
           <label
             htmlFor="endereco"
             className="mb-2 block text-sm font-medium"
@@ -173,16 +203,16 @@ export default function ObraForm() {
 
         <div>
           <label
-            htmlFor="responsavel"
+            htmlFor="cidade"
             className="mb-2 block text-sm font-medium"
           >
-            Responsável
+            Cidade
           </label>
 
           <input
-            id="responsavel"
-            name="responsavel"
-            value={form.responsavel}
+            id="cidade"
+            name="cidade"
+            value={form.cidade}
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500"
           />
@@ -190,79 +220,38 @@ export default function ObraForm() {
 
         <div>
           <label
-            htmlFor="inicio"
+            htmlFor="estado"
             className="mb-2 block text-sm font-medium"
           >
-            Data de início
+            Estado
           </label>
 
           <input
-            id="inicio"
-            type="date"
-            name="inicio"
-            value={form.inicio}
+            id="estado"
+            name="estado"
+            maxLength={2}
+            placeholder="SP"
+            value={form.estado}
             onChange={handleChange}
-            className="w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500"
+            className="w-full rounded-xl border border-slate-300 p-3 uppercase outline-none focus:border-blue-500"
           />
         </div>
 
         <div>
           <label
-            htmlFor="previsao"
+            htmlFor="cep"
             className="mb-2 block text-sm font-medium"
           >
-            Previsão de término
+            CEP
           </label>
 
           <input
-            id="previsao"
-            type="date"
-            name="previsao"
-            value={form.previsao}
+            id="cep"
+            name="cep"
+            value={form.cep}
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500"
           />
-        </div>
-
-        <div>
-          <label
-            htmlFor="valor"
-            className="mb-2 block text-sm font-medium"
-          >
-            Valor da obra
-          </label>
-
-          <input
-            id="valor"
-            name="valor"
-            inputMode="decimal"
-            placeholder="Exemplo: 150000,00"
-            value={form.valor}
-            onChange={handleChange}
-            className="w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="status"
-            className="mb-2 block text-sm font-medium"
-          >
-            Status
-          </label>
-
-          <select
-            id="status"
-            name="status"
-            value={form.status}
-            onChange={handleChange}
-            className="w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500"
-          >
-            <option value="Planejamento">Planejamento</option>
-            <option value="Em andamento">Em andamento</option>
-            <option value="Finalizada">Finalizada</option>
-            <option value="Pausada">Pausada</option>
-          </select>
         </div>
       </div>
 
@@ -284,13 +273,21 @@ export default function ObraForm() {
         />
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => router.push("/clientes")}
+          className="rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-700 hover:bg-slate-100"
+        >
+          Cancelar
+        </button>
+
         <button
           type="submit"
           disabled={salvando}
           className="rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
         >
-          {salvando ? "Salvando..." : "Salvar Obra"}
+          {salvando ? "Salvando..." : "Salvar Cliente"}
         </button>
       </div>
     </form>
