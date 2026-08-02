@@ -1,35 +1,38 @@
+import Link from "next/link";
+
 export default function Sidebar() {
   const menu = [
-    "🏠 Dashboard",
-    "🏗 Obras",
-    "👥 Clientes",
-    "👷 Funcionários",
-    "📦 Materiais",
-    "💰 Financeiro",
-    "📄 Relatórios",
-    "⚙ Configurações",
+    { label: "🏠 Dashboard", href: "/" },
+    { label: "🏗 Obras", href: "/obras" },
+    { label: "👥 Clientes", href: "#" },
+    { label: "👷 Funcionários", href: "#" },
+    { label: "📦 Materiais", href: "#" },
+    { label: "💰 Financeiro", href: "#" },
+    { label: "📄 Relatórios", href: "#" },
+    { label: "⚙ Configurações", href: "#" },
   ];
 
   return (
-    <aside className="w-64 h-screen bg-slate-900 text-white flex flex-col">
-      <div className="p-6 border-b border-slate-700">
+    <aside className="flex h-screen w-64 flex-col bg-slate-900 text-white">
+      <div className="border-b border-slate-700 p-6">
         <h1 className="text-2xl font-bold text-blue-400">
           ProjectHub AI
         </h1>
 
-        <p className="text-sm text-slate-400 mt-2">
+        <p className="mt-2 text-sm text-slate-400">
           Gestão inteligente de obras
         </p>
       </div>
 
       <nav className="flex-1 p-4">
         {menu.map((item) => (
-          <button
-            key={item}
-            className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition mb-2"
+          <Link
+            key={item.label}
+            href={item.href}
+            className="mb-2 block rounded-lg px-4 py-3 transition hover:bg-slate-800"
           >
-            {item}
-          </button>
+            {item.label}
+          </Link>
         ))}
       </nav>
     </aside>
