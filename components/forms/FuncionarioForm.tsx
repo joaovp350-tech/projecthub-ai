@@ -3,11 +3,17 @@
 import {
   type ChangeEvent,
   type FormEvent,
+  useEffect,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
+
+type Obra = {
+  id: number;
+  nome: string;
+};
 
 type FuncionarioFormData = {
   nome: string;
@@ -22,6 +28,7 @@ type FuncionarioFormData = {
   estado: string;
   cep: string;
   dataAdmissao: string;
+  obraId: string;
   observacoes: string;
 };
 
@@ -38,6 +45,7 @@ const initialForm: FuncionarioFormData = {
   estado: "",
   cep: "",
   dataAdmissao: "",
+  obraId: "",
   observacoes: "",
 };
 
@@ -46,12 +54,46 @@ export default function FuncionarioForm() {
 
   const [form, setForm] =
     useState<FuncionarioFormData>(initialForm);
+
+  const [obras, setObras] = useState<Obra[]>([]);
+  const [carregandoObras, setCarregandoObras] =
+    useState(true);
+
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
+  useEffect(() => {
+    async function carregarObras() {
+      setCarregandoObras(true);
+
+      const { data, error } = await supabase
+        .from("obras")
+        .select("id, nome")
+        .order("nome", { ascending: true });
+
+      if (error) {
+        console.error(error);
+
+        setErro(
+          `Não foi possível carregar as obras: ${error.message}`
+        );
+
+        setCarregandoObras(false);
+        return;
+      }
+
+      setObras(data ?? []);
+      setCarregandoObras(false);
+    }
+
+    carregarObras();
+  }, []);
+
   function handleChange(
     event: ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement
     >
   ) {
     const { name, value } = event.target;
@@ -73,8 +115,6 @@ export default function FuncionarioForm() {
       return;
     }
 
-    setSalvando(true);
-
     const salarioNumerico = form.salario
       ? Number(
           form.salario
@@ -83,6 +123,17 @@ export default function FuncionarioForm() {
             .replace(/[^\d.-]/g, "")
         )
       : null;
+
+    if (
+      form.salario.trim() &&
+      (salarioNumerico === null ||
+        Number.isNaN(salarioNumerico))
+    ) {
+      setErro("Informe um salário válido.");
+      return;
+    }
+
+    setSalvando(true);
 
     const { error } = await supabase
       .from("funcionarios")
@@ -96,22 +147,30 @@ export default function FuncionarioForm() {
         salario: salarioNumerico,
         endereco: form.endereco.trim() || null,
         cidade: form.cidade.trim() || null,
-        estado: form.estado.trim() || null,
+        estado:
+          form.estado.trim().toUpperCase() || null,
         cep: form.cep.trim() || null,
         data_admissao: form.dataAdmissao || null,
-        observacoes: form.observacoes.trim() || null,
+        obra_id: form.obraId
+          ? Number(form.obraId)
+          : null,
+        observacoes:
+          form.observacoes.trim() || null,
       });
 
     if (error) {
       console.error(error);
+
       setErro(
         `Não foi possível cadastrar o funcionário: ${error.message}`
       );
+
       setSalvando(false);
       return;
     }
 
     alert("Funcionário cadastrado com sucesso!");
+
     setForm(initialForm);
     router.push("/funcionarios");
     router.refresh();
@@ -280,6 +339,39 @@ export default function FuncionarioForm() {
 
         <div className="md:col-span-2">
           <label
+            htmlFor="obraId"
+            className="mb-2 block text-sm font-medium"
+          >
+            Obra vinculada
+          </label>
+
+          <select
+            id="obraId"
+            name="obraId"
+            value={form.obraId}
+            onChange={handleChange}
+            disabled={carregandoObras}
+            className="w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+          >
+            <option value="">
+              {carregandoObras
+                ? "Carregando obras..."
+                : "Sem obra vinculada"}
+            </option>
+
+            {obras.map((obra) => (
+              <option
+                key={obra.id}
+                value={obra.id}
+              >
+                {obra.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-2">
+          <label
             htmlFor="endereco"
             className="mb-2 block text-sm font-medium"
           >
@@ -370,15 +462,18 @@ export default function FuncionarioForm() {
       <div className="flex justify-end gap-3">
         <button
           type="button"
-          onClick={() => router.push("/funcionarios")}
-          className="rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-700 hover:bg-slate-100"
+          onClick={() =>
+            router.push("/funcionarios")
+          }
+          disabled={salvando}
+          className="rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Cancelar
         </button>
 
         <button
           type="submit"
-          disabled={salvando}
+          disabled={salvando || carregandoObras}
           className="rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
         >
           {salvando

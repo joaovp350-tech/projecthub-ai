@@ -1,6 +1,6 @@
 import RecentProjects from "./widgets/RecentProjects";
 import RevenueChart from "./widgets/RevenueChart";
-import StatsGrid from "./StatsGrid";
+import StatsCards from "./StatsCards";
 import TaskList from "./TaskList";
 
 export default function Dashboard() {
@@ -16,7 +16,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <StatsGrid />
+      <StatsCards />
 
       <div className="mt-8 grid gap-6 xl:grid-cols-3">
         <div className="min-h-80 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm xl:col-span-2">
@@ -51,41 +51,41 @@ export default function Dashboard() {
           <div className="mt-6 space-y-5">
             <div>
               <p className="font-medium text-slate-800">
-                ✔ João cadastrou uma nova obra
+                ✔ Nova obra cadastrada
               </p>
 
               <span className="text-sm text-slate-500">
-                há 5 minutos
+                Dados sincronizados com o Supabase
               </span>
             </div>
 
             <div>
               <p className="font-medium text-slate-800">
-                ✔ Cliente aprovou orçamento
+                ✔ Cliente adicionado
               </p>
 
               <span className="text-sm text-slate-500">
-                há 32 minutos
+                Cadastro disponível no módulo Clientes
               </span>
             </div>
 
             <div>
               <p className="font-medium text-slate-800">
-                ✔ Material entregue na obra
+                ✔ Funcionário cadastrado
               </p>
 
               <span className="text-sm text-slate-500">
-                hoje às 14:20
+                Equipe atualizada
               </span>
             </div>
 
             <div>
               <p className="font-medium text-slate-800">
-                ✔ Equipe concluiu a fundação
+                ✔ Material cadastrado
               </p>
 
               <span className="text-sm text-slate-500">
-                ontem
+                Estoque atualizado
               </span>
             </div>
           </div>

@@ -1,24 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import DataTable from "@/components/ui/DataTable";
+import Loading from "@/components/ui/Loading";
+import SearchInput from "@/components/ui/SearchInput";
 
 type Obra = {
   id: number;
   nome: string;
-  cliente: string;
-  status: string;
+  cliente: string | null;
+  status: string | null;
   valor: number | null;
 };
 
 export default function ObrasTable() {
   const [obras, setObras] = useState<Obra[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [busca, setBusca] = useState("");
+  const [carregando, setCarregando] = useState(true);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erro, setErro] = useState("");
+  const [obraParaExcluir, setObraParaExcluir] =
+    useState<Obra | null>(null);
 
   async function carregarObras() {
-    setLoading(true);
+    setCarregando(true);
+    setErro("");
 
     const { data, error } = await supabase
       .from("obras")
@@ -27,114 +37,195 @@ export default function ObrasTable() {
 
     if (error) {
       console.error(error);
-      setLoading(false);
+
+      setErro(
+        `Não foi possível carregar as obras: ${error.message}`
+      );
+
+      setCarregando(false);
       return;
     }
 
     setObras(data ?? []);
-    setLoading(false);
+    setCarregando(false);
   }
 
   useEffect(() => {
     carregarObras();
   }, []);
 
-  async function excluirObra(id: number) {
-    const confirmar = confirm(
-      "Deseja realmente excluir esta obra?"
-    );
+  function abrirConfirmacao(obra: Obra) {
+    setObraParaExcluir(obra);
+  }
 
-    if (!confirmar) return;
+  function fecharConfirmacao() {
+    if (excluindo) return;
+
+    setObraParaExcluir(null);
+  }
+
+  async function confirmarExclusao() {
+    if (!obraParaExcluir) return;
+
+    setExcluindo(true);
+    setErro("");
 
     const { error } = await supabase
       .from("obras")
       .delete()
-      .eq("id", id);
+      .eq("id", obraParaExcluir.id);
 
     if (error) {
-      alert("Erro ao excluir a obra.");
       console.error(error);
+
+      setErro(
+        `Não foi possível excluir a obra: ${error.message}`
+      );
+
+      setExcluindo(false);
+      setObraParaExcluir(null);
       return;
     }
+
+    setObraParaExcluir(null);
+    setExcluindo(false);
 
     await carregarObras();
   }
 
-  if (loading) {
-    return (
-      <div className="rounded-xl bg-white p-6 shadow">
-        Carregando obras...
-      </div>
-    );
+  const obrasFiltradas = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+
+    if (!termo) return obras;
+
+    return obras.filter((obra) => {
+      const campos = [
+        obra.nome,
+        obra.cliente,
+        obra.status,
+      ];
+
+      return campos.some((campo) =>
+        campo?.toLowerCase().includes(termo)
+      );
+    });
+  }, [busca, obras]);
+
+  const colunas = [
+    {
+      header: "Obra",
+      accessor: (obra: Obra) => (
+        <Link
+          href={`/obras/${obra.id}`}
+          className="font-semibold text-blue-600 hover:underline"
+        >
+          {obra.nome}
+        </Link>
+      ),
+    },
+    {
+      header: "Cliente",
+      accessor: (obra: Obra) =>
+        obra.cliente || "—",
+    },
+    {
+      header: "Status",
+      accessor: (obra: Obra) => (
+        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+          {obra.status || "Não informado"}
+        </span>
+      ),
+    },
+    {
+      header: "Valor",
+      className: "text-right",
+      accessor: (obra: Obra) =>
+        Number(obra.valor ?? 0).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        }),
+    },
+    {
+      header: "Ações",
+      className: "text-center",
+      accessor: (obra: Obra) => (
+        <div className="flex justify-center gap-2">
+          <Link
+            href={`/obras/${obra.id}`}
+            aria-label={`Ver detalhes de ${obra.nome}`}
+            className="rounded-lg bg-blue-600 px-3 py-2 text-white transition hover:bg-blue-700"
+          >
+            👁️
+          </Link>
+
+          <Link
+            href={`/obras/editar/${obra.id}`}
+            aria-label={`Editar ${obra.nome}`}
+            className="rounded-lg bg-amber-500 px-3 py-2 text-white transition hover:bg-amber-600"
+          >
+            ✏️
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => abrirConfirmacao(obra)}
+            aria-label={`Excluir ${obra.nome}`}
+            className="rounded-lg bg-red-600 px-3 py-2 text-white transition hover:bg-red-700"
+          >
+            🗑️
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  if (carregando) {
+    return <Loading text="Carregando obras..." />;
   }
 
   return (
-    <div className="overflow-hidden rounded-xl bg-white shadow">
-      <table className="w-full">
-        <thead className="bg-slate-100">
-          <tr>
-            <th className="p-4 text-left">Obra</th>
-            <th className="p-4 text-left">Cliente</th>
-            <th className="p-4 text-left">Status</th>
-            <th className="p-4 text-right">Valor</th>
-            <th className="p-4 text-center">Ações</th>
-          </tr>
-        </thead>
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <SearchInput
+          id="busca"
+          placeholder="Buscar por obra, cliente ou status..."
+          value={busca}
+          onChange={(event) => setBusca(event.target.value)}
+        />
+      </div>
 
-        <tbody>
-          {obras.map((obra) => (
-            <tr
-              key={obra.id}
-              className="border-t hover:bg-slate-50"
-            >
-              <td className="p-4">{obra.nome}</td>
+      {erro && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+          {erro}
+        </div>
+      )}
 
-              <td className="p-4">{obra.cliente}</td>
+      <DataTable
+        columns={colunas}
+        data={obrasFiltradas}
+        emptyMessage={
+          busca
+            ? "Nenhuma obra encontrada."
+            : "Nenhuma obra cadastrada."
+        }
+      />
 
-              <td className="p-4">{obra.status}</td>
-
-              <td className="p-4 text-right">
-                {Number(obra.valor ?? 0).toLocaleString("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                })}
-              </td>
-
-              <td className="p-4">
-                <div className="flex justify-center gap-2">
-                  <Link
-                    href={`/obras/editar/${obra.id}`}
-                    aria-label={`Editar ${obra.nome}`}
-                    className="rounded-lg bg-amber-500 px-3 py-2 text-white hover:bg-amber-600"
-                  >
-                    ✏️
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => excluirObra(obra.id)}
-                    aria-label={`Excluir ${obra.nome}`}
-                    className="rounded-lg bg-red-600 px-3 py-2 text-white hover:bg-red-700"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-
-          {obras.length === 0 && (
-            <tr>
-              <td
-                colSpan={5}
-                className="p-8 text-center text-slate-500"
-              >
-                Nenhuma obra cadastrada.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <ConfirmDialog
+        aberto={obraParaExcluir !== null}
+        titulo="Excluir obra"
+        descricao={
+          obraParaExcluir
+            ? `Deseja realmente excluir a obra “${obraParaExcluir.nome}”?`
+            : ""
+        }
+        textoConfirmar="Excluir"
+        carregando={excluindo}
+        onConfirmar={confirmarExclusao}
+        onCancelar={fecharConfirmacao}
+      />
     </div>
   );
 }
